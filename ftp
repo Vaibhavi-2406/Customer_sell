@@ -1,0 +1,255 @@
+# Experiment 5 – FTP File Transfer and GitHub Push
+
+I checked your uploaded expt 5.pdf. The experiment is titled:
+
+Aim: Storage file accessed remotely (VM) using FTP (FileZilla, CuteFTP or WinSCP), configure the server, transfer files to the VM using FTP, initialize a Git repository and push it to GitHub.&#x20;
+
+expt 5.pdf
+
+
+
+Below are the commands based on the work we completed in Ubuntu, using your existing GitHub repository `hello_test`.
+
+## Step 1: Install FTP and Git
+
+Open Ubuntu Terminal.
+
+```
+sudo apt update
+```
+
+```
+sudo apt install vsftpd ftp git -y
+```
+
+## Step 2: Start the FTP server
+
+```
+sudo systemctl start vsftpd
+```
+
+```
+sudo systemctl enable vsftpd
+```
+
+Check the FTP server:
+
+```
+sudo systemctl status vsftpd
+```
+
+Press `q` to exit the status screen.
+
+## Step 3: Create FTP user
+
+```
+sudo adduser ftpuser
+```
+
+Enter a password when prompted. Keep it private.
+
+## Step 4: Create a folder and sample file
+
+```
+mkdir -p ~/experiment5
+```
+
+```
+echo "This is my Experiment 5 FTP file transfer." > ~/experiment5/sample.txt
+```
+
+Set permissions:
+
+```
+sudo chown -R ftpuser:ftpuser /home/ftpuser/experiment5
+```
+
+If your folder was created under a different user's home directory, use its actual path for the ownership command.
+
+## Step 5: Find your Ubuntu IP address
+
+```
+ip a
+```
+
+Your earlier IP address was:
+
+```
+10.0.2.15
+```
+
+## Step 6: Connect to FTP
+
+```
+ftp 10.0.2.15
+```
+
+Enter:
+
+```
+Name: ftpuser
+Password: Your FTP password
+```
+
+Successful connection message:
+
+```
+230 Login successful.
+ftp>
+```
+
+## Step 7: Transfer the file using FTP
+
+Inside the `ftp>` prompt, run these commands one by one:
+
+```
+ls
+```
+
+```
+cd experiment5
+```
+
+```
+ls
+```
+
+Download the file:
+
+```
+get sample.txt
+```
+
+Exit FTP:
+
+```
+bye
+```
+
+FTP transfer completed
+
+## Step 8: Create a local Git repository folder
+
+Back in the normal Ubuntu terminal:
+
+```
+mkdir -p ~/experiment5-git
+```
+
+```
+cd ~/experiment5-git
+```
+
+Copy the downloaded file into this folder:
+
+```
+cp /home/vboxuser/sample.txt .
+```
+
+Check the file:
+
+```
+ls
+```
+
+You should see:
+
+```
+sample.txt
+```
+
+## Step 9: Initialize the Git repository
+
+```
+git init
+```
+
+Configure your Git identity:
+
+```
+git config --global user.name "Vaibhavi"
+```
+
+```
+git config --global user.email "YOUR_GITHUB_EMAIL"
+```
+
+Add the file:
+
+```
+git add .
+```
+
+Check the status:
+
+```
+git status
+```
+
+Commit the file:
+
+```
+git commit -m "Experiment 5 FTP file transfer"
+```
+
+Local Git commit completed
+
+## Step 10: Connect your existing GitHub repository
+
+Your existing repository:
+
+`https://github.com/Vaibhavi-2406/hello_test.git`
+
+Run:
+
+```
+git remote add origin https://github.com/Vaibhavi-2406/hello_test.git
+```
+
+Set the branch:
+
+```
+git branch -M main
+```
+
+Push to GitHub:
+
+```
+git push -u origin main
+```
+
+If GitHub asks for authentication, use your GitHub username and a Personal Access Token instead of your account password. Never share your token.
+
+GitHub push completed
+
+## Final verification
+
+Run:
+
+```
+git status
+```
+
+```
+git remote -v
+```
+
+Open your GitHub repository:
+
+[Open your hello_test GitHub repository](https://github.com/Vaibhavi-2406/hello_test?utm_source=chatgpt.com)
+
+You should see `sample.txt` in the repository.
+
+## Screenshots to include in your practical journal
+
+1. FTP server running successfully.
+2. FTP login successful.
+3. File transferred using FTP (`get sample.txt`).
+4. Git repository initialized (`git init`).
+5. File committed in local Git repository (`git commit`).
+6. Git push to GitHub (`git push -u origin main`).
+7. Uploaded file visible in GitHub.
+
+Conclusion: Remote file access using FTP was implemented successfully. The transferred file was added to a local Git repository and pushed to GitHub.
+
+Note: Your PDF specifies the experiment objectives and screenshot headings, but it does not list the terminal commands. The commands above follow the Ubuntu setup and repository details we worked with earlier.
