@@ -1,0 +1,691 @@
+Yes bro! ❤️ Experiment 11 is closely related to Experiment 9, but Experiment 11 specifically focuses on Split Deployment.
+
+The main idea is to deploy the frontend and backend separately:
+
+- Frontend: HTML, CSS and JavaScript deployed on Vercel.
+- Backend: PHP deployed on your Ubuntu VM using Apache.
+- Database: MySQL installed on the Ubuntu VM.
+- Public connection: ngrok provides a public URL to access your Ubuntu backend.
+
+We'll build a working contact form from scratch, including installation, database creation, frontend and backend files, GitHub upload, and deployment.
+
+# Experiment 11: Implement Split Deployment Website with Form and MySQL Backend
+
+## How the project works
+
+Frontend – Vercel
+
+HTML + CSS contact form
+
+Form submission through ngrok URL
+
+Backend – Ubuntu VM
+
+Apache + PHP
+
+MySQL Database
+
+contact_db → contacts table
+
+We'll use your Ubuntu VM for the backend and a separate GitHub repository for the frontend. Your existing `storage` repository is not needed for this experiment.
+
+## Part A: Backend setup on Ubuntu VM
+
+### Step 1: Open Ubuntu Terminal and update packages
+
+Run these commands one by one:
+
+```
+sudo apt update
+sudo apt upgrade -y
+```
+
+### Step 2: Install Apache, PHP and MySQL
+
+```
+sudo apt install apache2 mysql-server php libapache2-mod-php php-mysql -y
+```
+
+Check installations:
+
+```
+apache2 -v
+php -v
+mysql --version
+```
+
+### Step 3: Start all services
+
+```
+sudo systemctl enable --now apache2
+sudo systemctl enable --now mysql
+```
+
+Check Apache:
+
+```
+sudo systemctl status apache2
+```
+
+Check MySQL:
+
+```
+sudo systemctl status mysql
+```
+
+Press `q` to exit the status screen.
+
+Open your Ubuntu browser and visit:
+
+```
+http://localhost
+```
+
+You should see the Apache2 Ubuntu Default Page.
+
+## Part B: Create MySQL database
+
+### Step 4: Open MySQL
+
+```
+sudo mysql
+```
+
+Now execute these SQL commands one by one:
+
+```
+CREATE DATABASE contact_db;
+```
+
+Select the database:
+
+```
+USE contact_db;
+```
+
+Create the contacts table:
+
+```
+CREATE TABLE contacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Create a database user:
+
+```
+CREATE USER 'contact_app'@'localhost' IDENTIFIED BY 'Contact123@';
+```
+
+Give permission to insert records:
+
+```
+GRANT INSERT ON contact_db.contacts TO 'contact_app'@'localhost';
+```
+
+Apply changes:
+
+```
+FLUSH PRIVILEGES;
+```
+
+Check the table:
+
+```
+SHOW TABLES;
+```
+
+Exit MySQL:
+
+```
+EXIT;
+```
+
+Database created
+
+Your database structure is:
+
+```
+contact_db
+    |
+    └── contacts
+          ├── id
+          ├── name
+          ├── email
+          ├── message
+          └── created_at
+```
+
+## Part C: Create backend PHP files
+
+### Step 5: Create the backend project folder
+
+```
+sudo mkdir -p /var/www/html/contact-api
+```
+
+Give your Ubuntu user permission to create files:
+
+```
+sudo chown -R $USER:$USER /var/www/html/contact-api
+```
+
+Enter the folder:
+
+```
+cd /var/www/html/contact-api
+```
+
+### Step 6: Create the backend PHP file
+
+Run:
+
+```
+nano submit.php
+```
+
+Paste this complete code:
+
+```
+
+<?php
+$conn = new mysqli(
+    "localhost",
+    "contact_app",
+    "Contact123@",
+    "contact_db"
+);
+
+if ($conn->connect_error) {
+    die("Database connection failed");
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $name = trim($_POST["name"] ?? "");
+    $email = trim($_POST["email"] ?? "");
+    $message = trim($_POST["message"] ?? "");
+
+    if ($name == "" || $email == "" || $message == "") {
+        die("Please fill all fields.");
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        die("Invalid email address.");
+    }
+
+    $stmt = $conn->prepare(
+        "INSERT INTO contacts (name, email, message)
+         VALUES (?, ?, ?)"
+    );
+
+    $stmt->bind_param("sss", $name, $email, $message);
+
+    if ($stmt->execute()) {
+        echo "<h2>Contact submitted successfully!</h2>";
+        echo "<p>Your details have been saved in MySQL.</p>";
+    } else {
+        echo "Error submitting contact.";
+    }
+
+    $stmt->close();
+
+} else {
+    echo "PHP backend is working!";
+}
+
+$conn->close();
+?>
+
+```
+
+Save the file:
+
+1. Press `Ctrl + O`.
+2. Press `Enter`.
+3. Press `Ctrl + X`.
+
+### Step 7: Check backend file
+
+```
+ls
+```
+
+You should see:
+
+```
+submit.php
+```
+
+Restart Apache:
+
+```
+sudo systemctl restart apache2
+```
+
+Test the PHP backend in your browser:
+
+```
+http://localhost/contact-api/submit.php
+```
+
+Expected output:
+
+```
+PHP backend is working!
+```
+
+## Part D: Test PHP with MySQL
+
+### Step 8: Submit sample data from Ubuntu Terminal
+
+Run:
+
+```
+curl -X POST \
+-d "name=Test User&email=test@gmail.com&message=Hello from Ubuntu" \
+http://localhost/contact-api/submit.php
+```
+
+Expected output:
+
+```
+Contact submitted successfully!
+Your details have been saved in MySQL.
+```
+
+Check whether the record is saved:
+
+```
+sudo mysql -e "SELECT * FROM contact_db.contacts;"
+```
+
+PHP and MySQL connected
+
+## Part E: Install and configure ngrok
+
+### Step 9: Create ngrok folder
+
+```
+mkdir -p ~/ngrok-server
+cd ~/ngrok-server
+```
+
+Check your Ubuntu architecture:
+
+```
+dpkg --print-architecture
+```
+
+If the output is `amd64`, run:
+
+```
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz -O ngrok.tgz
+```
+
+If the output is `arm64`, run:
+
+```
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-arm64.tgz -O ngrok.tgz
+```
+
+Extract ngrok:
+
+```
+tar -xzf ngrok.tgz
+chmod +x ngrok
+```
+
+Check installation:
+
+```
+./ngrok version
+```
+
+### Step 10: Authenticate ngrok
+
+1. Open [ngrok signup](https://dashboard.ngrok.com/signup?utm_source=chatgpt.com).
+2. Create or log in to your account.
+3. Open the [Your Authtoken page](https://dashboard.ngrok.com/get-started/your-authtoken?utm_source=chatgpt.com).
+4. Copy your authentication token.
+
+In Ubuntu, run:
+
+```
+./ngrok config add-authtoken YOUR_NGROK_AUTH_TOKEN
+```
+
+Replace the placeholder with your actual token. Keep it private.
+
+### Step 11: Start the backend tunnel
+
+Make sure Apache is running:
+
+```
+sudo systemctl start apache2
+```
+
+Run:
+
+```
+cd ~/ngrok-server
+./ngrok http 80
+```
+
+You will get a public forwarding URL similar to:
+
+```
+https://abcd-1234.ngrok-free.app
+```
+
+Backend publicly accessible
+
+Keep this Ubuntu Terminal open. The tunnel must remain running.
+
+Your backend URL is:
+
+```
+https://YOUR-NGROK-URL/contact-api/submit.php
+```
+
+Replace `YOUR-NGROK-URL` with the actual ngrok address.
+
+# Part F: Create frontend files
+
+We will create the frontend separately from the backend.
+
+You can create it on Windows using VS Code or Windows PowerShell.
+
+### Step 12: Create frontend folder
+
+Open Windows PowerShell:
+
+```
+mkdir contact-frontend
+cd contact-frontend
+```
+
+Create the frontend HTML file:
+
+```
+notepad index.html
+```
+
+Paste this code:
+
+```
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contact Us</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 450px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2563eb;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Contact Us</h2>
+
+    <form
+        action="https://YOUR-NGROK-URL/contact-api/submit.php"
+        method="POST">
+
+        <label>Name</label>
+        <input type="text" name="name" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Message</label>
+        <textarea name="message" required></textarea>
+
+        <button type="submit">Submit</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
+
+```
+
+Important: Replace `https://YOUR-NGROK-URL` in the form action with your actual ngrok URL from Step 11.
+
+Save the file.
+
+Your frontend folder should look like this:
+
+```
+contact-frontend/
+       |
+       └── index.html
+```
+
+## Part G: Upload frontend to GitHub
+
+### Step 13: Initialize Git
+
+In Windows PowerShell, inside `contact-frontend`, run:
+
+```
+git init
+```
+
+Add files:
+
+```
+git add .
+```
+
+Commit:
+
+```
+git commit -m "Create contact form frontend"
+```
+
+Set branch:
+
+```
+git branch -M main
+```
+
+### Step 14: Create a GitHub repository
+
+1. Open [GitHub – Create repository](https://github.com/new?utm_source=chatgpt.com).
+2. Repository name: `split-contact-frontend`.
+3. Select Public or Private.
+4. Do not select Add README.
+5. Click Create repository.
+
+Connect your GitHub repository:
+
+```
+git remote add origin https://github.com/YOUR-USERNAME/split-contact-frontend.git
+```
+
+Push:
+
+```
+git push -u origin main
+```
+
+Replace `YOUR-USERNAME` with your GitHub username.
+
+## Part H: Deploy frontend on Vercel
+
+### Step 15: Deploy the website
+
+[docs/vercel-cn.md · estorm1996/gpt at main](https://images.openai.com/static-rsc-4/-J3KCI0SaAec26ofViCYcsvKxmfVcCaRRsNvQwQG0TxWdQsGuLI6zGs-qCX2L7osL4kzQfxXZzcsjuDYiFzKk5D1n6NJiQPGHc9rPPUqrdlPRImnlICCjdF0gJ3Vs2kX1kI8CFVC-rwe_lih0FaSSX2vM3ULxhnm8bOjaK6pQZ0?purpose=inline)
+
+[huggingface.co](https://huggingface.co/spaces/estorm1996/gpt/blob/main/docs/vercel-cn.md?utm_source=chatgpt.com)
+
+1. Open [Vercel](https://vercel.com/?utm_source=chatgpt.com).
+2. Sign in using GitHub.
+3. Click Add New → Project.
+4. Import `split-contact-frontend`.
+5. Framework Preset: Other.
+6. Build Command: leave empty.
+7. Output Directory: leave empty or use `.`.
+8. Click Deploy.
+
+After successful deployment, Vercel gives you a website URL, for example:
+
+```
+https://split-contact-frontend.vercel.app
+```
+
+Open the URL and check whether your contact form is visible.
+
+## Part I: Final testing
+
+### Step 16: Submit contact form
+
+1. Keep Ubuntu Apache and ngrok running.
+2. Open your Vercel website.
+3. Enter your name.
+4. Enter your email.
+5. Enter your message.
+6. Click Submit.
+
+You should receive:
+
+```
+Contact submitted successfully!
+Your details have been saved in MySQL.
+```
+
+### Step 17: Verify data in MySQL
+
+Go back to Ubuntu Terminal and run:
+
+```
+sudo mysql
+```
+
+Then:
+
+```
+USE contact_db;
+SELECT * FROM contacts;
+```
+
+You should see the submitted contact details.
+
+Exit:
+
+```
+EXIT;
+```
+
+Experiment 11 completed
+
+# Final practical folder structure
+
+Frontend – GitHub and Vercel
+
+contact-frontend/
+
+index.html
+
+Backend – Ubuntu VM
+
+/var/www/html/contact-api/
+
+submit.php
+
+Database – MySQL
+
+contact_db
+
+contacts
+
+# Important viva questions
+
+1\. What is split deployment?
+
+Split deployment means deploying the frontend and backend separately on different platforms or servers.
+
+2\. What is Vercel?
+
+Vercel is a cloud platform used to deploy frontend websites.
+
+3\. What is ngrok?
+
+ngrok creates a public URL to access a local server running on a computer or VM.
+
+4\. What is PHP?
+
+PHP is a server-side scripting language used to process form data and communicate with databases.
+
+5\. What is MySQL?
+
+MySQL is a relational database management system used to store and manage data.
+
+6\. What is Apache?
+
+Apache is a web server that serves website files and runs PHP when configured with PHP support.
+
+7\. What is the purpose of `submit.php`?
+
+It receives form data, connects to MySQL and inserts the submitted details into the contacts table.
+
+8\. What is the purpose of `contact_db`?
+
+It stores the contact form data.
+
+## Important points for your exam
+
+- Keep the Ubuntu VM switched on.
+- Apache and MySQL must be running.
+- Keep ngrok running while testing the Vercel form.
+- If you restart ngrok, its public URL may change. Update `index.html`, push the change to GitHub and redeploy.
+- Vercel hosts the frontend; it does not run this PHP/MySQL backend.
+- This practical uses a public ngrok tunnel, so use only test data and never expose your database credentials in the frontend.
+
+One thing to remember: The frontend sends the form directly to the PHP backend using a normal HTML POST form. This does not require browser CORS permission for the basic form submission.
+
+You can practise the steps in this order tomorrow: Install → MySQL → PHP backend → Test locally → ngrok → Frontend → GitHub → Vercel → Final database verification.
