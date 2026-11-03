@@ -1,0 +1,277 @@
+
+“Using remote file access, transfer files to the VM using FTP, initialize the Git repository and push to GitHub.”
+
+You have already created a GitHub repository named `storage`, so we will use that same repository. We will follow the order: create a file on Windows → transfer it to Ubuntu using FileZilla → initialize Git → push to GitHub → clone the repository.
+
+# Step 1: Create a file on Windows
+
+Open Windows PowerShell (not Ubuntu Terminal).
+
+Run these commands one by one:
+
+```
+mkdir storage
+cd storage
+```
+
+Create a sample text file:
+
+```
+Set-Content storage.txt "This is my remote storage file."
+```
+
+Check the file:
+
+```
+dir
+```
+
+You should see:
+
+```
+storage.txt
+```
+
+# Step 2: Prepare Ubuntu for remote file access
+
+Open your Ubuntu VM and run:
+
+```
+sudo apt update
+```
+
+Install SSH:
+
+```
+sudo apt install openssh-server -y
+```
+
+Start SSH:
+
+```
+sudo systemctl enable --now ssh
+```
+
+Check SSH status:
+
+```
+sudo systemctl status ssh
+```
+
+Press `q` to exit the status screen.
+
+Find your Ubuntu username:
+
+```
+whoami
+```
+
+Find your Ubuntu IP address:
+
+```
+hostname -I
+```
+
+Note down the IP address. You will need it in FileZilla.
+
+# Step 3: Connect Windows to Ubuntu using FileZilla
+
+[How to install Filezilla in Debian 12](https://images.openai.com/static-rsc-4/-j0H5cZLq_vds_z1r2Kq4UpSxQVE5cROA9zzkLTSbDIte_tSpQ1Fn6RCYbLhrVa6m9aIDvJGHfTdB4pNoWsMIZwmEFbhugYWT4XfM96Qa7gZwMxMDF8GXOQstrjmEz299SE-l452b7cNt1JTygZGJnLAgF2T7W1WresyfYe3b6E?purpose=inline)
+
+[owlhowto.com](https://owlhowto.com/how-to-install-filezilla-in-debian-12/?utm_source=chatgpt.com)
+
+1. Open FileZilla on Windows.
+2. Enter these details:
+
+| Field    | Value                                |
+| -------- | ------------------------------------ |
+| Protocol | SFTP - SSH File Transfer Protocol    |
+| Host     | Ubuntu IP address from `hostname -I` |
+| Username | Ubuntu username from `whoami`        |
+| Password | Your Ubuntu login password           |
+| Port     | `22`                                 |
+
+3. Click Quickconnect.
+4. Accept the SSH host-key confirmation if it appears.
+
+On the right side, open your Ubuntu home directory:
+
+```
+/home/your-ubuntu-username/
+```
+
+On the left side, open the Windows `storage` folder.
+
+Drag `storage.txt` from the left side to the right side.
+
+Transfer complete
+
+Your file is now transferred to Ubuntu.
+
+# Step 4: Organize the transferred file in Ubuntu
+
+Open Ubuntu Terminal and run:
+
+```
+mkdir -p ~/storage
+mv ~/storage.txt ~/storage/
+cd ~/storage
+```
+
+Check the file:
+
+```
+ls
+cat storage.txt
+```
+
+You should see your file and its contents.
+
+# Step 5: Install Git
+
+```
+sudo apt install git -y
+```
+
+Check Git installation:
+
+```
+git --version
+```
+
+Configure your Git identity. Use your own name and GitHub email:
+
+```
+git config --global user.name "Your Name"
+git config --global user.email "your-email@gmail.com"
+```
+
+# Step 6: Initialize the Git repository
+
+Make sure you are inside the `storage` folder:
+
+```
+cd ~/storage
+```
+
+Initialize Git:
+
+```
+git init
+```
+
+Add the files:
+
+```
+git add .
+```
+
+Commit the files:
+
+```
+git commit -m "Initial commit"
+```
+
+Set the branch name:
+
+```
+git branch -M main
+```
+
+# Step 7: Connect your existing GitHub repository
+
+Your repository name is `storage`.
+
+Run this command after replacing `YOUR-USERNAME` with your GitHub username:
+
+```
+git remote add origin https://github.com/YOUR-USERNAME/storage.git
+```
+
+Check the remote:
+
+```
+git remote -v
+```
+
+Push your files to GitHub:
+
+```
+git push -u origin main
+```
+
+GitHub upload complete
+
+Open your GitHub `storage` repository and refresh the page. You should see `storage.txt`.
+
+
+# Step 8: Clone the GitHub repository
+
+Now download the repository into a separate folder in Ubuntu.
+
+```
+cd ~
+git clone https://github.com/YOUR-USERNAME/storage.git
+```
+
+Enter the cloned repository:
+
+```
+cd storage
+```
+
+Check the files:
+
+```
+ls
+```
+
+Read the file:
+
+```
+cat storage.txt
+```
+
+Check Git status:
+
+```
+git status
+```
+
+# Step 9: Test GitHub synchronization
+
+Make a small change:
+
+```
+echo "Updated from Ubuntu VM." >> storage.txt
+```
+
+Add and commit:
+
+```
+git add .
+git commit -m "Updated storage file"
+```
+
+Push the update:
+
+```
+git push
+```
+
+Pull the latest version:
+
+```
+git pull origin main
+```
+
+
+1. Create `storage.txt` on Windows.
+2. Connect FileZilla to Ubuntu using SFTP.
+3. Transfer `storage.txt` to Ubuntu.
+4. Initialize Git using `git init`.
+5. Commit the file using `git add` and `git commit`.
+6. Push the file to your existing GitHub `storage` repository.
+7. Clone the repository and verify the downloaded file.
+
+ngs in. You can do this! ❤️
